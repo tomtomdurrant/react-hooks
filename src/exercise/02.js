@@ -4,17 +4,18 @@
 import * as React from 'react'
 
 function Greeting({initialName = ''}) {
-  // 🐨 initialize the state to the value from localStorage
-  // 💰 window.localStorage.getItem('name') || initialName
-  const [name, setName] = React.useState(initialName)
-
-  // 🐨 Here's where you'll use `React.useEffect`.
-  // The callback should set the `name` in localStorage.
-  // 💰 window.localStorage.setItem('name', name)
-
+  // const [name, setName] = React.useState(
+  //   () => window.localStorage.getItem('name') || initialName,
+  // )
+  // React.useEffect(() => {
+  //   window.localStorage.setItem('name', name)
+  // }, [name])
+  //
+  const [name, setName] = useLocalStorageState('name', initialName)
   function handleChange(event) {
     setName(event.target.value)
   }
+
   return (
     <div>
       <form>
@@ -27,7 +28,37 @@ function Greeting({initialName = ''}) {
 }
 
 function App() {
-  return <Greeting />
+  return <Greeting initialName="tom" />
 }
 
 export default App
+
+function useLocalStorageState(
+  key,
+  initialValue,
+  {serialize = JSON.stringify, deserialize = JSON.parse} = {},
+) {
+  const [value, setValue] = React.useState(() => {
+    const localStorageValue = window.localStorage.getItem(key)
+    if (localStorageValue) {
+      return deserialize(localStorageValue)
+    }
+    // If the value is computationally expensive we can pass it a function to return the default value
+    return typeof initialValue === 'function' ? initialValue() : initialValue
+  })
+
+  // Gives an object you can mutate without re-renders
+  const prevKeyRef = React.useRef(key)
+
+  React.useEffect(() => {
+    // If the key updates we can update this in the background
+    const prevKey = prevKeyRef.current
+    if (prevKey !== key) {
+      window.localStorage.removeItem(prevKey)
+    }
+    prevKeyRef.current = key
+    window.localStorage.setItem(key, serialize(value))
+  }, [key, value, serialize])
+
+  return [value, setValue]
+}
