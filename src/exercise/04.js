@@ -4,28 +4,8 @@
 import * as React from 'react'
 import {useLocalStorageState} from '../utils'
 
-// const EMPTY_BOARD = Array(9).fill(null)
 function Board({squares, selectSquare}) {
   // 🐨 squares is the state for this component. Add useState for squares
-
-  // const [squares, setSquares] = React.useState(() => {
-  //   const localStorageBoard = window.localStorage.getItem('board')
-  //   if (localStorageBoard) {
-  //     return JSON.parse(localStorageBoard)
-  //   }
-  //   return EMPTY_BOARD
-  // })
-  // squares[0] = 'X'
-  // squares[1] = 'O'
-  // squares[2] = 'X'
-  // squares[3] = 'O'
-  // squares[4] = 'X'
-  // squares[5] = 'O'
-  // squares[6] = 'X'
-  // const [squares, setSquares] = React.useState(initialSquares)
-  // const [winner, setWinner] = React.useState(calculateWinner(squares))
-  // const [nextValue, setNextValue] = React.useState(null)
-
   // 🐨 We'll need the following bits of derived state:
   // - nextValue ('X' or 'O')
   // - winner ('X', 'O', or null)
@@ -40,7 +20,6 @@ function Board({squares, selectSquare}) {
       </button>
     )
   }
-  console.log({squares})
 
   return (
     <div>
@@ -67,11 +46,9 @@ function Game() {
   const [squares, setSquares] = useLocalStorageState('ttt:board', [
     Array(9).fill(null),
   ])
-  console.log('Current History', squares)
   const [stepNumber, setStepNumber] = useLocalStorageState('ttt:stepNumber', 0)
+
   const currentBoard = squares[stepNumber]
-  console.log('Current Board', currentBoard)
-  // debugger
   const winner = calculateWinner(currentBoard)
   const nextValue = calculateNextValue(currentBoard)
   const status = calculateStatus(winner, currentBoard, nextValue)
@@ -79,7 +56,6 @@ function Game() {
   // This is the function your square click handler will call. `square` should
   // be an index. So if they click the center square, this will be `4`.
   function selectSquare(square) {
-    console.log('Select Square', square)
     // 🐨 first, if there's already winner or there's already a value at the
     // given square index (like someone clicked a square that's already been
     // clicked), then return early so we don't make any state changes
@@ -94,17 +70,7 @@ function Game() {
     // 💰 `squaresCopy[square] = nextValue`
     //
     // 🐨 set the squares to your copy
-    // if (squares[square]) {
-    //   return
-    // }
-    // if (winner) {
-    //   console.log('Winner')
-    //   return
-    // }
-    // setNextValue(calculateNextValue(squares))
-    // const newSquares = [...squares]
-    // newSquares[square] = nextValue
-    // setSquares(newSquares)
+
     if (winner || currentBoard[square]) {
       return
     }
@@ -112,27 +78,35 @@ function Game() {
     const newBoard = [...squares[stepNumber]]
     newBoard[square] = nextValue
     setSquares(squares.concat([newBoard]))
-    console.log('nbaldasdj', squares)
     setStepNumber(stepNumber + 1)
   }
 
   function goToMove(moveNumber) {
-    console.log('Going to move ', moveNumber)
-    debugger
-    const newSquares = squares.slice(0, moveNumber)
-    setSquares(newSquares)
+    const newSquares = squares.slice(0, moveNumber + 1)
     setStepNumber(moveNumber)
-    console.log('squares are', squares)
-    console.log('new Squares', newSquares)
+    setSquares(newSquares)
   }
 
   function restart() {
     // 🐨 reset the squares
     // 💰 `Array(9).fill(null)` will do it!
-    setSquares(Array(9).fill(null))
     setStepNumber(0)
+    setSquares([Array(9).fill(null)])
   }
 
+  const moves = currentBoard.map((move, i) => {
+    if (!move) {
+      return null
+    }
+    return (
+      <li>
+        <button disabled={i + 1 === stepNumber} onClick={() => goToMove(i)}>
+          Go to move #{i + 1}
+          {i + 1 === stepNumber ? ' (current)' : null}
+        </button>
+      </li>
+    )
+  })
   return (
     <div className="game">
       <div className="game-board">
@@ -144,22 +118,12 @@ function Game() {
       <div className="game-info">
         <div>{status}</div>
         <ol>
-          {currentBoard.filter(Boolean).map((move, i) => {
-            if (i === 0) {
-              return (
-                <li>
-                  <button onClick={() => goToMove(0)}>Go to game start</button>
-                </li>
-              )
-            }
-            return (
-              <li key={i}>
-                <button disabled={stepNumber === i} onClick={() => goToMove(i)}>
-                  Go to {i === 0 ? 'game start' : `move #${i}`}
-                </button>
-              </li>
-            )
-          })}
+          <li>
+            <button disabled={stepNumber === 0} onClick={() => goToMove(0)}>
+              Go to game start {stepNumber === 0 ? ' (current)' : null}
+            </button>
+          </li>
+          {moves}
         </ol>
       </div>
     </div>

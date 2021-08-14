@@ -6,12 +6,52 @@ import * as React from 'react'
 // fetchPokemon: the function we call to get the pokemon info
 // PokemonInfoFallback: the thing we show while we're loading the pokemon info
 // PokemonDataView: the stuff we use to display the pokemon info
-import {PokemonForm} from '../pokemon'
+import {
+  fetchPokemon,
+  PokemonDataView,
+  PokemonForm,
+  PokemonInfoFallback,
+} from '../pokemon'
 
 function PokemonInfo({pokemonName}) {
-  // 🐨 Have state for the pokemon (null)
+  const [state, setState] = React.useState({
+    pokemon: null,
+    status: 'idle',
+    error: null,
+  })
+  function setLoading() {
+    setState({
+      status: 'loading',
+      pokemon: null,
+      error: null,
+    })
+  }
+
   // 🐨 use React.useEffect where the callback should be called whenever the
   // pokemon name changes.
+  React.useEffect(() => {
+    if (!pokemonName) {
+      return
+    }
+    setLoading()
+    fetchPokemon(pokemonName)
+      .then(pokemon => {
+        console.log('Returned', pokemon)
+        setState({
+          pokemon,
+          status: 'resolved',
+          error: null,
+        })
+      })
+      .catch(error => {
+        console.log('error', error)
+        setState({
+          pokemon: null,
+          status: 'rejected',
+          error,
+        })
+      })
+  }, [pokemonName])
   // 💰 DON'T FORGET THE DEPENDENCIES ARRAY!
   // 💰 if the pokemonName is falsy (an empty string) then don't bother making the request (exit early).
   // 🐨 before calling `fetchPokemon`, clear the current pokemon state by setting it to null
@@ -25,7 +65,23 @@ function PokemonInfo({pokemonName}) {
   //   3. pokemon: <PokemonDataView pokemon={pokemon} />
 
   // 💣 remove this
-  return 'TODO'
+  if (state.status === 'rejected') {
+    return (
+      <div role="alert">
+        There was an error:{' '}
+        <pre style={{whiteSpace: 'normal'}}>{state.error.message}</pre>
+      </div>
+    )
+  }
+  if (state.status === 'idle') {
+    return <div>Submit a pokemon</div>
+  }
+  if (state.status === 'loading') {
+    return <PokemonInfoFallback name={pokemonName} />
+  }
+  if (state.status === 'resolved') {
+    return <PokemonDataView pokemon={state.pokemon} />
+  }
 }
 
 function App() {
